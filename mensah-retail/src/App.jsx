@@ -1012,52 +1012,143 @@ _Thank you for choosing sartorial excellence._`;
 
           {/* Sizing Preview Details Overlay (Landing View version - Lifted to Root Sibling) */}
 
-          {/* Private Consultation Booking Form */}
+          {/* Private Consultation & Location Section */}
           <section className="lookbook-section" id="tailor-booking" style={{ background: '#080808' }}>
-            <div className="container" style={{ maxWidth: '600px', textAlign: 'center' }}>
-              <span style={{ color: 'var(--color-gold)', letterSpacing: '0.2em', textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                ✦ Private Atelier Session ✦
-              </span>
-              <h2 style={{ fontSize: '2.5rem', marginTop: '12px', marginBottom: '16px', fontFamily: 'var(--font-serif)' }}>
-                Schedule a Custom Fitting
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '32px' }}>
-                Connect with our master tailor at our Airport Residential atelier. Enter your details below, and we will arrange a private fitting and custom measurement consult.
-              </p>
+            <div className="container" style={{ maxWidth: '1100px' }}>
+              <div className="atelier-split-grid">
+                
+                {/* Left Column: Schedule a Fitting */}
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-grey)',
+                  padding: '40px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ color: 'var(--color-gold)', letterSpacing: '0.2em', textTransform: 'uppercase', fontSize: '0.75rem', display: 'block', marginBottom: '8px' }}>
+                    ✦ Private Atelier Session ✦
+                  </span>
+                  <h2 style={{ fontSize: '2.2rem', marginBottom: '16px', fontFamily: 'var(--font-serif)', color: '#f5f5f0' }}>
+                    Schedule a Fitting
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '28px' }}>
+                    Connect with our master tailor to arrange a private measurement consult. Enter your credentials below and request booking.
+                  </p>
 
-              <form onSubmit={handleConsultationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="form-group" style={{ textAlign: 'left' }}>
-                  <label htmlFor="client-name">Your Full Name</label>
-                  <input
-                    type="text"
-                    id="client-name"
-                    className="form-control"
-                    required
-                    placeholder="e.g. Kwame Mensah"
-                    value={consultationName}
-                    onChange={(e) => setConsultationName(e.target.value)}
-                  />
+                  <form onSubmit={handleConsultationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="form-group" style={{ textAlign: 'left' }}>
+                      <label htmlFor="client-name">Your Full Name</label>
+                      <input
+                        type="text"
+                        id="client-name"
+                        className="form-control"
+                        required
+                        placeholder="e.g. Kwame Mensah"
+                        value={consultationName}
+                        onChange={(e) => setConsultationName(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ textAlign: 'left' }}>
+                      <label htmlFor="client-email">Email Coordinate</label>
+                      <input
+                        type="email"
+                        id="client-email"
+                        className="form-control"
+                        required
+                        placeholder="e.g. kwame@domain.com"
+                        value={consultationEmail}
+                        onChange={(e) => setConsultationEmail(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="btn-gold-solid"
+                      style={{ width: '100%', marginTop: '8px' }}
+                    >
+                      Request Atelier Booking ⚜
+                    </button>
+                  </form>
                 </div>
-                <div className="form-group" style={{ textAlign: 'left' }}>
-                  <label htmlFor="client-email">Email Coordinate</label>
-                  <input
-                    type="email"
-                    id="client-email"
-                    className="form-control"
-                    required
-                    placeholder="e.g. kwame@domain.com"
-                    value={consultationEmail}
-                    onChange={(e) => setConsultationEmail(e.target.value)}
-                  />
+
+                {/* Right Column: Skills Hub by YOTA Location Card */}
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-gold)',
+                  padding: '40px',
+                  borderRadius: '4px',
+                  boxShadow: 'var(--shadow-luxury)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <span style={{ color: 'var(--color-gold)', letterSpacing: '0.2em', textTransform: 'uppercase', fontSize: '0.75rem', display: 'block', marginBottom: '8px' }}>
+                      ✦ ATELIER LOCATION ✦
+                    </span>
+                    <h2 style={{ fontSize: '2.2rem', marginBottom: '12px', fontFamily: 'var(--font-serif)', color: '#f5f5f0' }}>
+                      Skills Hub by YOTA
+                    </h2>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '0.92rem', fontWeight: '500', marginBottom: '8px' }}>
+                      Ground Floor, YOTA Building, 95 La-Bawaleshi Rd, Accra, Ghana
+                    </p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '24px' }}>
+                      Please call <strong style={{ color: 'var(--color-gold)' }}>Anthony on 0543114410</strong> or <strong style={{ color: 'var(--color-gold)' }}>Pabi on 0543764156</strong> if you have questions or need assistance.
+                    </p>
+                  </div>
+
+                  {/* Dark Mode Map with Open in Maps button */}
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '240px',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                    border: '1px solid var(--border-grey)'
+                  }}>
+                    <a
+                      href="https://www.google.com/maps/place/Skills+Hub+by+YOTA/@5.6322047,-0.1654313,17z"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-gold"
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        left: '12px',
+                        zIndex: 10,
+                        padding: '6px 14px',
+                        fontSize: '0.7rem',
+                        background: 'rgba(8, 8, 8, 0.95)',
+                        backdropFilter: 'blur(4px)',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                      }}
+                    >
+                      <span>Open in Maps</span>
+                      <span style={{ fontSize: '0.8rem' }}>↗</span>
+                    </a>
+
+                    <iframe
+                      title="Skills Hub by YOTA location map"
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3970.6133481079366!2d-0.1654313!3d5.6322047!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfdf9b76cc39a9c1%3A0xe54e38c92a65ad61!2sSkills%20Hub%20by%20YOTA!5e0!3m2!1sen!2sgh!4v1716480000000!5m2!1sen!2sgh"
+                      width="100%"
+                      height="100%"
+                      style={{
+                        border: 0,
+                        filter: 'grayscale(1) invert(0.92) contrast(1.1) brightness(0.95)'
+                      }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    ></iframe>
+                  </div>
                 </div>
-                <button
-                  type="submit"
-                  className="btn-gold-solid"
-                  style={{ width: '100%', marginTop: '8px' }}
-                >
-                  Request Private Atelier Booking ⚜
-                </button>
-              </form>
+
+              </div>
             </div>
           </section>
         </main>
@@ -2004,7 +2095,32 @@ _Thank you for choosing sartorial excellence._`;
         textAlign: 'center'
       }}>
         <div className="container">
-          <img src={logoImg} alt="MENSAH logo" style={{ height: '30px', objectFit: 'contain', opacity: '0.6', marginBottom: '20px' }} />
+          <img src={logoImg} alt="MENSAH logo" style={{ height: '30px', objectFit: 'contain', opacity: '0.6', marginBottom: '16px' }} />
+          
+          {/* Centered Luxury Social Media Links Row */}
+          <div className="footer-social-row">
+            <a href="https://wa.me/233593800950" target="_blank" rel="noopener noreferrer" className="footer-social-link" title="Contact WhatsApp">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.69-4.98c-.202-.101-1.192-.588-1.37-.653-.18-.066-.31-.097-.442.097-.133.197-.513.653-.629.787-.117.133-.232.148-.43.05-1.979-.99-2.637-1.87-3.098-2.666-.118-.203-.012-.313.088-.413.09-.09.202-.232.302-.349.1-.116.133-.197.2-.33.067-.133.034-.251-.017-.353-.05-.101-.442-1.063-.607-1.46-.159-.387-.318-.335-.442-.34-.117-.005-.251-.006-.384-.006-.133 0-.352.05-.536.25-.184.2-.705.69-.705 1.686 0 .996.723 1.96.824 2.096.1.137 1.42 2.17 3.44 3.045.482.208.857.332 1.151.426.485.154.927.132 1.277.08.39-.058 1.192-.488 1.36-.957.17-.468.17-.87.118-.957-.05-.086-.18-.133-.38-.235z"/>
+              </svg>
+            </a>
+            <a href="https://instagram.com/mensah_luxury" target="_blank" rel="noopener noreferrer" className="footer-social-link" title="Follow Instagram">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.999 0h.002zm-.008 1.528c2.146 0 2.4.008 3.248.046.78.035 1.203.166 1.485.276.374.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.847.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.838.038-1.07.047-3.224.047s-2.39-.008-3.232-.047c-.78-.035-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233s.008-2.388.046-3.231c.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"/>
+              </svg>
+            </a>
+            <a href="https://x.com/mensah_lux" target="_blank" rel="noopener noreferrer" className="footer-social-link" title="Follow X (Twitter)">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/>
+              </svg>
+            </a>
+            <a href="https://linkedin.com/company/mensah-luxury" target="_blank" rel="noopener noreferrer" className="footer-social-link" title="Follow LinkedIn">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
+              </svg>
+            </a>
+          </div>
+
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.2em' }}>
             MENSAH Luxury Group &copy; 2026 • Tailored with pride in Accra • Team likekodji
           </p>
