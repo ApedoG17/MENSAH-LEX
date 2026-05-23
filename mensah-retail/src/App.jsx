@@ -1072,7 +1072,7 @@ _Thank you for choosing sartorial excellence._`;
                   </form>
                 </div>
 
-                {/* Right Column: Skills Hub by YOTA Location Card */}
+                {/* Right Column: MENSAH Luxury Atelier Location Card */}
                 <div style={{
                   background: 'var(--bg-secondary)',
                   border: '1px solid var(--border-gold)',
@@ -1088,13 +1088,13 @@ _Thank you for choosing sartorial excellence._`;
                       ✦ ATELIER LOCATION ✦
                     </span>
                     <h2 style={{ fontSize: '2.2rem', marginBottom: '12px', fontFamily: 'var(--font-serif)', color: '#f5f5f0' }}>
-                      Skills Hub by YOTA
+                      MENSAH Luxury Atelier
                     </h2>
                     <p style={{ color: 'var(--text-primary)', fontSize: '0.92rem', fontWeight: '500', marginBottom: '8px' }}>
-                      Ground Floor, YOTA Building, 95 La-Bawaleshi Rd, Accra, Ghana
+                      Airport Residential Area, Accra, Ghana
                     </p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '24px' }}>
-                      Please call <strong style={{ color: 'var(--color-gold)' }}>Anthony on 0543114410</strong> or <strong style={{ color: 'var(--color-gold)' }}>Pabi on 0543764156</strong> if you have questions or need assistance.
+                      Please call <strong style={{ color: 'var(--color-gold)' }}>Godwin on 0593800950</strong> if you have questions or need assistance.
                     </p>
                   </div>
 
@@ -1108,7 +1108,7 @@ _Thank you for choosing sartorial excellence._`;
                     border: '1px solid var(--border-grey)'
                   }}>
                     <a
-                      href="https://www.google.com/maps/place/Skills+Hub+by+YOTA/@5.6322047,-0.1654313,17z"
+                      href="https://www.google.com/maps/place/Airport+Residential+Area,+Accra"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-gold"
@@ -1133,8 +1133,8 @@ _Thank you for choosing sartorial excellence._`;
                     </a>
 
                     <iframe
-                      title="Skills Hub by YOTA location map"
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3970.6133481079366!2d-0.1654313!3d5.6322047!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfdf9b76cc39a9c1%3A0xe54e38c92a65ad61!2sSkills%20Hub%20by%20YOTA!5e0!3m2!1sen!2sgh!4v1716480000000!5m2!1sen!2sgh"
+                      title="MENSAH Luxury Atelier location map"
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15882.99026410196!2d-0.1906917637841797!3d5.6037!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfdf9a6b9a89df2b%3A0x6b4904bf524458d9!2sAirport+Residential+Area%2C+Accra!5e0!3m2!1sen!2sgh!4v1716480000000!5m2!1sen!2sgh"
                       width="100%"
                       height="100%"
                       style={{
