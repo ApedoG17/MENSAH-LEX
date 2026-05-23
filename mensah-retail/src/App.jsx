@@ -106,6 +106,26 @@ export default function App() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hiddenCampaignIds, setHiddenCampaignIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mensah_hidden_campaigns');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Helper to hide lookbook drops client-side (API is create-only)
+  const hideCampaign = (campaignId) => {
+    const updated = [...hiddenCampaignIds, campaignId];
+    setHiddenCampaignIds(updated);
+    try {
+      localStorage.setItem('mensah_hidden_campaigns', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+    triggerToast('Lookbook drop removed from display.');
+  };
 
   // Curated Collection Category switching states
   const [activeCategory, setActiveCategory] = useState('all'); // all, agbada, senator, sartorial
@@ -1064,7 +1084,7 @@ _Thank you for choosing sartorial excellence._`;
           </section>
 
           {/* Active Campaigns Lookbook section */}
-          {campaigns.length > 0 && (
+          {campaigns.filter(camp => !hiddenCampaignIds.includes(camp.id)).length > 0 && (
             <section className="lookbook-section" id="lookbook-drops">
               <div className="container">
                 <h2 className="lookbook-title">Curated Lookbooks</h2>
@@ -1073,8 +1093,16 @@ _Thank you for choosing sartorial excellence._`;
                 </p>
 
                 <div className="lookbook-carousel" id="lookbooks-scroll">
-                  {campaigns.map(camp => (
-                    <div key={camp.id} className="lookbook-slide" id={`campaign-${camp.id}`}>
+                  {campaigns.filter(camp => !hiddenCampaignIds.includes(camp.id)).map(camp => (
+                    <div key={camp.id} className="lookbook-slide" id={`campaign-${camp.id}`} style={{ position: 'relative' }}>
+                      <button
+                        type="button"
+                        className="lookbook-delete-btn"
+                        onClick={() => hideCampaign(camp.id)}
+                        title="Hide Lookbook Drop"
+                      >
+                        ✕
+                      </button>
                       <div className="lookbook-slide-image">
                         <img
                           src={camp.image_urls && camp.image_urls.length > 0 ? formatImageUrl(camp.image_urls[0]) : logoImg}
@@ -1815,6 +1843,61 @@ _Thank you for choosing sartorial excellence._`;
                     Publish New Collection Drop
                   </button>
                 </form>
+
+                {/* Active campaigns list manager in Admin panel */}
+                <div style={{ marginTop: '32px', borderTop: '1px solid var(--border-grey)', paddingTop: '24px' }}>
+                  <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--color-gold)', marginBottom: '16px', letterSpacing: '0.1em' }}>
+                    Active Lookbooks Management
+                  </h4>
+                  <div className="orders-list">
+                    {campaigns.length === 0 ? (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>No campaigns available.</p>
+                    ) : (
+                      campaigns.map(camp => {
+                        const isHidden = hiddenCampaignIds.includes(camp.id);
+                        return (
+                          <div key={camp.id} className="order-row" style={{ opacity: isHidden ? 0.45 : 1 }}>
+                            <div style={{ flexGrow: 1, marginRight: '16px' }}>
+                              <strong style={{ display: 'block', fontSize: '0.9rem', color: isHidden ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                                {camp.title}
+                              </strong>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                ID: {camp.id} {isHidden && ' • HIDDEN'}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-gold"
+                              style={{ 
+                                padding: '6px 12px', 
+                                fontSize: '0.75rem', 
+                                borderColor: isHidden ? 'var(--color-gold)' : '#ff6b6b', 
+                                color: isHidden ? 'var(--color-gold)' : '#ff6b6b' 
+                              }}
+                              onClick={() => {
+                                if (isHidden) {
+                                  const updated = hiddenCampaignIds.filter(id => id !== camp.id);
+                                  setHiddenCampaignIds(updated);
+                                  try {
+                                    localStorage.setItem('mensah_hidden_campaigns', JSON.stringify(updated));
+                                  } catch (e) {
+                                    console.error(e);
+                                  }
+                                  triggerToast('Lookbook drop restored to display.');
+                                } else {
+                                  hideCampaign(camp.id);
+                                }
+                              }}
+                            >
+                              {isHidden ? 'Restore' : 'Hide Drop'}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
               </div>
             )}
 

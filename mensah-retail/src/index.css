@@ -1107,3 +1107,33 @@ p {
   padding: 8px 12px;
   border-radius: 2px;
 }
+
+/* Premium Lookbook Drop Hide/Delete button */
+.lookbook-delete-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(8, 8, 8, 0.85);
+  border: 1px solid var(--border-grey);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  font-size: 0.85rem;
+  backdrop-filter: blur(8px);
+}
+
+.lookbook-delete-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
+}
+
