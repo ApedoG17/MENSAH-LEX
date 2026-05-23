@@ -36,14 +36,61 @@ const COURIERS_LIST = [
   { id: 'rider-3', name: 'Akosua Cantonments', lat: 5.5790, lng: -0.1601, startX: 72, startY: 55, currentX: 72, currentY: 55 }
 ];
 
+// Curated luxury product names and captions (overriding generic "Outfit 1" names)
+const BESPOKE_PRODUCT_DETAILS = [
+  // Agbadas (0 - 2)
+  {
+    name: "The Emperor's Drape ⚜",
+    description: "A majestic ivory white flowing garment adorned with metallic gold geometric hand-embroidery. Formulated with rigid canvas for royal presentation."
+  },
+  {
+    name: "Gilded Heritage Agbada ⚜",
+    description: "Rich obsidian black cotton blend featuring structured shoulder padding, elegant side drapes, and high-profile bronze needlework."
+  },
+  {
+    name: "Sovereign Crest Agbada ⚜",
+    description: "Royal indigo weave paired with heavy canvas lining, modern tailored collar embroidery, and open-drape flowing comfort."
+  },
+  // Senators (3 - 5)
+  {
+    name: "The Diplomat Senator 👔",
+    description: "An elegant charcoal grey minimal cut tunic featuring hand-stitched piping and structured shoulders for professional stature."
+  },
+  {
+    name: "Regent Midnight Senator 👔",
+    description: "Midnight sapphire blue tunic crafted from thick premium linen, complete with a modern high-profile collar and concealed buttons."
+  },
+  {
+    name: "Envoy Olive Senator 👔",
+    description: "Sage olive green minimalist canvas tunic with asymmetrical gold chest embroidery, double lining, and Italian-inspired cuff structure."
+  },
+  // Sartorial Cuts (6 - 9)
+  {
+    name: "The Executive Ivory Suit ✂",
+    description: "A contemporary cream-white double-breasted jacket paired with sleek tailored trousers. Crafted with breathable premium Savile-inspired linen."
+  },
+  {
+    name: "Monarch Navy Blazer ✂",
+    description: "Deep navy blue double-breasted canvas blazer featuring textured gold buttons, structured padded shoulders, and tapered trousers."
+  },
+  {
+    name: "Sterling Charcoal Suit ✂",
+    description: "High-contrast charcoal check blazer constructed with a soft silk lapel, rigid canvas build, and organic Accra-woven cotton."
+  },
+  {
+    name: "Obsidian Sovereign Suit ✂",
+    description: "All-black tailored formalwear showcasing structured shoulders, custom gold monogram lining, and deep obsidian high-twist linen."
+  }
+];
+
 // Mathematical Haversine proximity function
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -51,7 +98,7 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 
 export default function App() {
   // App view router: 'landing' (story & curated showcase) or 'store' (transactional mall)
-  const [view, setView] = useState('landing'); 
+  const [view, setView] = useState('landing');
 
   // Data lists
   const [catalog, setCatalog] = useState([]);
@@ -70,7 +117,10 @@ export default function App() {
   const [checkoutPhone, setCheckoutPhone] = useState('0593800950');
   const [checkoutNote, setCheckoutNote] = useState('');
   const [whatsappMerchantNumber, setWhatsappMerchantNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
-  
+
+  // Confirmed Basket state to show order receipt details
+  const [confirmedBasket, setConfirmedBasket] = useState(null);
+
   // Custom Detail/Personalization Modal states
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -82,13 +132,13 @@ export default function App() {
   // -------------------------------------------------------------
   const [isFittingRoomActive, setIsFittingRoomActive] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
-  const [chatStep, setChatStep] = useState(0); 
+  const [chatStep, setChatStep] = useState(0);
   const [inputVal, setInputVal] = useState('');
   const [tempMetrics, setTempMetrics] = useState({ chest: null, waist: null, hips: null });
   const [chatbotFitScore, setChatbotFitScore] = useState(null);
   const [chatbotSizeLabel, setChatbotSizeLabel] = useState(null);
-  const [fitPreference, setFitPreference] = useState('tailored'); 
-  
+  const [fitPreference, setFitPreference] = useState('tailored');
+
   // Ref for chatbot scroll pinning
   const chatScrollRef = useRef(null);
 
@@ -96,10 +146,10 @@ export default function App() {
   // Logistics Engine & Map Dashboard States (Store page only)
   // -------------------------------------------------------------
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState('analytics'); 
+  const [adminActiveTab, setAdminActiveTab] = useState('analytics');
   const [teamAnalytics, setTeamAnalytics] = useState(null);
   const [refreshAnalytics, setRefreshAnalytics] = useState(0);
-  
+
   // Map Courier Dispatch states
   const [couriers, setCouriers] = useState(COURIERS_LIST);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
@@ -140,13 +190,20 @@ export default function App() {
           fetchCatalog(),
           fetchCampaigns()
         ]);
-        
-        // Enrich catalog items with curated category tags
+
+        // Enrich catalog items with curated category tags & lucrative details
         const enrichedCatalog = catalogData.map((item, idx) => {
           let category = 'sartorial'; // Fallback category
-          if (idx < 3) category = 'agbada';      
-          else if (idx < 6) category = 'senator'; 
-          return { ...item, category };
+          if (idx < 3) category = 'agbada';
+          else if (idx < 6) category = 'senator';
+
+          const bespoke = BESPOKE_PRODUCT_DETAILS[idx] || {};
+          return {
+            ...item,
+            category,
+            name: bespoke.name || item.name,
+            description: bespoke.description || item.description
+          };
         });
 
         setCatalog(enrichedCatalog);
@@ -189,36 +246,36 @@ export default function App() {
   useEffect(() => {
     if (!loading) {
       const tl = gsap.timeline();
-      
-      tl.fromTo('.hero-subtitle', 
-        { opacity: 0, y: -20 }, 
+
+      tl.fromTo('.hero-subtitle',
+        { opacity: 0, y: -20 },
         { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
       )
-      .fromTo('.hero-title', 
-        { opacity: 0, y: 30 }, 
-        { opacity: 1, y: 0, duration: 1, ease: 'power3.out' },
-        '-=0.5'
-      )
-      .fromTo('.hero-desc', 
-        { opacity: 0 }, 
-        { opacity: 1, duration: 1.2 },
-        '-=0.6'
-      )
-      .fromTo('.hero-actions', 
-        { opacity: 0, scale: 0.95 }, 
-        { opacity: 1, scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.75)' },
-        '-=0.4'
-      );
+        .fromTo('.hero-title',
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 1, ease: 'power3.out' },
+          '-=0.5'
+        )
+        .fromTo('.hero-desc',
+          { opacity: 0 },
+          { opacity: 1, duration: 1.2 },
+          '-=0.6'
+        )
+        .fromTo('.hero-actions',
+          { opacity: 0, scale: 0.95 },
+          { opacity: 1, scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.75)' },
+          '-=0.4'
+        );
 
       // Stagger reveal entrance for product cards
-      gsap.fromTo('.product-card', 
+      gsap.fromTo('.product-card',
         { opacity: 0, y: 50, rotate: 1 },
-        { 
-          opacity: 1, 
-          y: 0, 
+        {
+          opacity: 1,
+          y: 0,
           rotate: 0,
-          duration: 0.8, 
-          stagger: 0.1, 
+          duration: 0.8,
+          stagger: 0.1,
           ease: 'power2.out'
         }
       );
@@ -237,14 +294,19 @@ export default function App() {
       ease: 'power2.in',
       onComplete: () => {
         // Reset category filters & change view state
-        setActiveCategory('all');
-        setFilteredCatalog(catalog);
+        if (targetView === 'store') {
+          setActiveCategory('agbada');
+          setFilteredCatalog(catalog.filter(item => item.category === 'agbada'));
+        } else {
+          setActiveCategory('all');
+          setFilteredCatalog(catalog);
+        }
         setView(targetView);
         window.scrollTo(0, 0);
 
         // Smooth page fade-in
         setTimeout(() => {
-          gsap.fromTo('main', 
+          gsap.fromTo('main',
             { opacity: 0, y: 25 },
             { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
           );
@@ -274,16 +336,16 @@ export default function App() {
         setActiveCategory(category);
 
         setTimeout(() => {
-          gsap.fromTo('.product-card', 
+          gsap.fromTo('.product-card',
             { opacity: 0, y: 35, scale: 0.97, rotate: 1 },
-            { 
-              opacity: 1, 
-              y: 0, 
+            {
+              opacity: 1,
+              y: 0,
               scale: 1,
               rotate: 0,
-              duration: 0.6, 
-              stagger: 0.08, 
-              ease: 'power3.out' 
+              duration: 0.6,
+              stagger: 0.08,
+              ease: 'power3.out'
             }
           );
         }, 50);
@@ -326,7 +388,7 @@ export default function App() {
     setChatMessages(prev => [...prev, { id: userMsgId, sender: 'user', text: userText }]);
 
     setTimeout(() => {
-      gsap.fromTo(`#msg-${userMsgId}`, 
+      gsap.fromTo(`#msg-${userMsgId}`,
         { opacity: 0, y: 15 },
         { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
       );
@@ -362,7 +424,7 @@ export default function App() {
       const updatedMetrics = { ...tempMetrics, hips: userVal };
       setTempMetrics(updatedMetrics);
       setChatStep(4);
-      
+
       setTimeout(() => {
         appendBotMessage('Excellent. Executing dimensional matching algorithm on our tailoring server...');
         calculateChatbotFitting(updatedMetrics);
@@ -374,7 +436,7 @@ export default function App() {
     const msgId = Date.now();
     setChatMessages(prev => [...prev, { id: msgId, sender: 'bot', text }]);
     setTimeout(() => {
-      gsap.fromTo(`#msg-${msgId}`, 
+      gsap.fromTo(`#msg-${msgId}`,
         { opacity: 0, y: 15 },
         { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
       );
@@ -452,7 +514,7 @@ export default function App() {
       const tl = gsap.timeline({
         onComplete: () => {
           setDispatchStatusMsg('Package picked up at Mensah Boutique. Easing delivery route to customer...');
-          
+
           gsap.to(`#courier-${closestCourier.id}`, {
             left: `${destNeighborhood.x}%`,
             top: `${destNeighborhood.y}%`,
@@ -462,10 +524,10 @@ export default function App() {
               setDispatchStatusMsg(`Order ${deliveryBasket.id} delivered successfully to ${destNeighborhood.name}!`);
               setIsDispatching(false);
               triggerToast(`Delivery confirmed to ${destNeighborhood.name}!`);
-              
+
               setTimeout(() => {
-                setCouriers(prev => prev.map(c => 
-                  c.id === closestCourier.id 
+                setCouriers(prev => prev.map(c =>
+                  c.id === closestCourier.id
                     ? { ...c, currentX: destNeighborhood.x, currentY: destNeighborhood.y, lat: destNeighborhood.lat, lng: destNeighborhood.lng }
                     : c
                 ));
@@ -550,7 +612,7 @@ export default function App() {
 
     try {
       triggerToast('Registering bespoke order with API server...');
-      
+
       const basketPayload = {
         items: cart,
         customerName: checkoutName,
@@ -560,8 +622,8 @@ export default function App() {
 
       const result = await submitBasket(basketPayload);
       const basketId = result.id;
-      
-      triggerToast('Order verified! Launching secure WhatsApp link...');
+
+      triggerToast('Bespoke order registered successfully!');
 
       const totalCedis = (getBasketTotalMinor() / 100).toFixed(2);
       const itemsSummary = cart.map(item => {
@@ -593,12 +655,18 @@ _Thank you for choosing sartorial excellence._`;
       const targetPhone = whatsappMerchantNumber.replace(/[^0-9+]/g, '');
       const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedMsg}`;
 
+      // Save details to render a gorgeous pop-up safe receipt modal
+      setConfirmedBasket({
+        id: basketId,
+        name: checkoutName,
+        total: totalCedis,
+        items: [...cart],
+        url: whatsappUrl
+      });
+
+      // Clear the local cart and close the cart drawer
       setCart([]);
       setIsCartOpen(false);
-      
-      setTimeout(() => {
-        window.open(whatsappUrl, '_blank');
-      }, 1000);
 
     } catch (err) {
       console.error(err);
@@ -630,7 +698,7 @@ _Thank you for choosing sartorial excellence._`;
 
       await createCampaign(campaignPayload);
       triggerToast('New lookbook drop published!');
-      
+
       setCampaignTitle('');
       setCampaignCopy('');
       setCampaignImageFile(null);
@@ -646,7 +714,7 @@ _Thank you for choosing sartorial excellence._`;
   };
 
   const handleCheckboxChange = (itemId) => {
-    setCampaignFeaturedIds(prev => 
+    setCampaignFeaturedIds(prev =>
       prev.includes(itemId)
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
@@ -687,15 +755,15 @@ _Thank you for choosing sartorial excellence._`;
           <div className="nav-actions">
             {view === 'landing' ? (
               <>
-                <button 
-                  className="btn-gold" 
+                <button
+                  className="btn-gold"
                   onClick={() => {
                     document.getElementById('brand-story').scrollIntoView({ behavior: 'smooth' });
                   }}
                 >
                   The Story
                 </button>
-                <button 
+                <button
                   className="btn-gold"
                   onClick={() => {
                     document.getElementById('inventory-catalog').scrollIntoView({ behavior: 'smooth' });
@@ -703,7 +771,7 @@ _Thank you for choosing sartorial excellence._`;
                 >
                   Spotlight
                 </button>
-                <button 
+                <button
                   className="btn-gold-solid"
                   onClick={() => switchAppView('store')}
                 >
@@ -712,22 +780,22 @@ _Thank you for choosing sartorial excellence._`;
               </>
             ) : (
               <>
-                <button 
+                <button
                   className="btn-gold"
                   onClick={() => switchAppView('landing')}
                 >
                   Atelier Home ⚜
                 </button>
-                <button 
-                  className="btn-gold" 
-                  id="btn-admin-drawer" 
+                <button
+                  className="btn-gold"
+                  id="btn-admin-drawer"
                   onClick={() => setIsAdminOpen(true)}
                 >
                   ⚜ Portal Admin
                 </button>
-                <button 
-                  className="btn-gold-solid" 
-                  id="btn-cart-drawer" 
+                <button
+                  className="btn-gold-solid"
+                  id="btn-cart-drawer"
                   onClick={() => setIsCartOpen(true)}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
@@ -766,13 +834,13 @@ _Thank you for choosing sartorial excellence._`;
                 We do not just construct garments; we shape presence. Mensah creates premium structured suits and modernized traditional West African formalwear with geometric detailing.
               </p>
               <div className="hero-actions" style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
-                <button 
+                <button
                   className="btn-gold-solid"
                   onClick={() => switchAppView('store')}
                 >
                   ⚜ Enter Shopping Mall ⚜
                 </button>
-                <button 
+                <button
                   className="btn-gold"
                   onClick={() => {
                     document.getElementById('brand-story').scrollIntoView({ behavior: 'smooth' });
@@ -801,7 +869,7 @@ _Thank you for choosing sartorial excellence._`;
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '28px' }}>
                     Each outfit from our seasonal collections is meticulously calculated to fit perfectly. Click **"Bespoke Details"** below to preview premium fabrics, silhouette shapes, and close-ups, or navigate to our digital **Shopping Mall** to configure custom measurements.
                   </p>
-                  
+
                   <div style={{ display: 'flex', gap: '40px' }}>
                     <div>
                       <h4 style={{ color: 'var(--color-gold)', fontSize: '1.8rem', fontFamily: 'var(--font-serif)' }}>100%</h4>
@@ -853,28 +921,28 @@ _Thank you for choosing sartorial excellence._`;
               borderBottom: '1px solid var(--border-grey)',
               paddingBottom: '16px'
             }}>
-              <button 
+              <button
                 className={`admin-tab ${activeCategory === 'all' ? 'active' : ''}`}
                 style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
                 onClick={() => filterCollection('all')}
               >
                 All Outfits
               </button>
-              <button 
+              <button
                 className={`admin-tab ${activeCategory === 'agbada' ? 'active' : ''}`}
                 style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
                 onClick={() => filterCollection('agbada')}
               >
                 The Grand Agbadas ⚜
               </button>
-              <button 
+              <button
                 className={`admin-tab ${activeCategory === 'senator' ? 'active' : ''}`}
                 style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
                 onClick={() => filterCollection('senator')}
               >
                 The Senators 👔
               </button>
-              <button 
+              <button
                 className={`admin-tab ${activeCategory === 'sartorial' ? 'active' : ''}`}
                 style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
                 onClick={() => filterCollection('sartorial')}
@@ -892,9 +960,9 @@ _Thank you for choosing sartorial excellence._`;
                 {filteredCatalog.map(prod => (
                   <div key={prod.id} className="product-card" id={`spotlight-${prod.id}`}>
                     <div className="product-image-container">
-                      <img 
-                        src={prod.image_urls && prod.image_urls.length > 0 ? formatImageUrl(prod.image_urls[0]) : logoImg} 
-                        alt={prod.name} 
+                      <img
+                        src={prod.image_urls && prod.image_urls.length > 0 ? formatImageUrl(prod.image_urls[0]) : logoImg}
+                        alt={prod.name}
                         className="product-image"
                       />
                       <span className="product-badge" style={{ textTransform: 'uppercase', fontSize: '0.55rem' }}>
@@ -908,7 +976,7 @@ _Thank you for choosing sartorial excellence._`;
                       </p>
                       <div className="product-price-row" style={{ marginTop: '16px' }}>
                         <span className="product-price" style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-gold)' }}>Bespoke Commission</span>
-                        <button 
+                        <button
                           className="btn-gold"
                           onClick={() => setSelectedProduct(prod)} // Opens Quick Look preview
                         >
@@ -922,63 +990,7 @@ _Thank you for choosing sartorial excellence._`;
             )}
           </section>
 
-          {/* Sizing Preview Details Overlay (Landing View version) */}
-          {selectedProduct && (
-            <div className="modal-overlay active">
-              <div className="modal-content" style={{ maxWidth: '800px' }}>
-                <button className="modal-close" onClick={closePersonalization}>✕</button>
-                <div className="modal-grid">
-                  <div className="modal-image-panel">
-                    <img 
-                      src={selectedProduct.image_urls && selectedProduct.image_urls.length > 0 ? formatImageUrl(selectedProduct.image_urls[0]) : logoImg} 
-                      alt={selectedProduct.name} 
-                    />
-                  </div>
-                  <div className="modal-details-panel" style={{ justifyContent: 'center' }}>
-                    <span style={{ color: 'var(--color-gold)', letterSpacing: '0.1em', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                      Atelier Close-Up
-                    </span>
-                    <h2 style={{ fontSize: '2rem', marginTop: '4px', marginBottom: '16px' }}>{selectedProduct.name}</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '20px' }}>
-                      {selectedProduct.description || 'Constructed with double chest lining, a rigid premium shoulder build, and lightweight breathable West African weave.'}
-                    </p>
-                    <div style={{
-                      padding: '16px',
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--border-grey)',
-                      borderRadius: '2px',
-                      marginBottom: '24px'
-                    }}>
-                      <strong style={{ color: 'var(--color-gold)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>
-                        📐 Bespoke Sizing Profile
-                      </strong>
-                      <span style={{ fontSize: '0.85rem' }}>
-                        To calculate your exact size coordinates, configure initials monograms, and submit WhatsApp order checkouts, please enter our **Shopping Mall**.
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      <button 
-                        className="btn-gold-solid"
-                        style={{ flexGrow: 1 }}
-                        onClick={() => {
-                          closePersonalization();
-                          switchAppView('store');
-                        }}
-                      >
-                        Enter Shopping Mall ⚜
-                      </button>
-                      <button 
-                        className="btn-gold"
-                        onClick={closePersonalization}
-                      >
-                        Close Showcase
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Sizing Preview Details Overlay (Landing View version - Lifted to Root Sibling) */}
 
           {/* Private Consultation Booking Form */}
           <section className="lookbook-section" id="tailor-booking" style={{ background: '#080808' }}>
@@ -996,11 +1008,11 @@ _Thank you for choosing sartorial excellence._`;
               <form onSubmit={handleConsultationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="form-group" style={{ textAlign: 'left' }}>
                   <label htmlFor="client-name">Your Full Name</label>
-                  <input 
-                    type="text" 
-                    id="client-name" 
-                    className="form-control" 
-                    required 
+                  <input
+                    type="text"
+                    id="client-name"
+                    className="form-control"
+                    required
                     placeholder="e.g. Kwame Mensah"
                     value={consultationName}
                     onChange={(e) => setConsultationName(e.target.value)}
@@ -1008,19 +1020,19 @@ _Thank you for choosing sartorial excellence._`;
                 </div>
                 <div className="form-group" style={{ textAlign: 'left' }}>
                   <label htmlFor="client-email">Email Coordinate</label>
-                  <input 
-                    type="email" 
-                    id="client-email" 
-                    className="form-control" 
-                    required 
+                  <input
+                    type="email"
+                    id="client-email"
+                    className="form-control"
+                    required
                     placeholder="e.g. kwame@domain.com"
                     value={consultationEmail}
                     onChange={(e) => setConsultationEmail(e.target.value)}
                   />
                 </div>
-                <button 
-                  type="submit" 
-                  className="btn-gold-solid" 
+                <button
+                  type="submit"
+                  className="btn-gold-solid"
                   style={{ width: '100%', marginTop: '8px' }}
                 >
                   Request Private Atelier Booking ⚜
@@ -1042,7 +1054,7 @@ _Thank you for choosing sartorial excellence._`;
               <p className="hero-desc" style={{ fontSize: '1rem', maxWidth: '600px', margin: '0 auto 20px' }}>
                 Welcome to our interactive digital store. Click **"Bespoke Order"** on any design to configure monograms, activate our AI Fitting chatbot, and check out via WhatsApp.
               </p>
-              <button 
+              <button
                 className="btn-gold"
                 onClick={() => switchAppView('landing')}
               >
@@ -1059,14 +1071,14 @@ _Thank you for choosing sartorial excellence._`;
                 <p className="lookbook-subtitle">
                   Click on featured garments featured directly inside active lookbook drops to initiate bespoke tailored orders.
                 </p>
-                
+
                 <div className="lookbook-carousel" id="lookbooks-scroll">
                   {campaigns.map(camp => (
                     <div key={camp.id} className="lookbook-slide" id={`campaign-${camp.id}`}>
                       <div className="lookbook-slide-image">
-                        <img 
-                          src={camp.image_urls && camp.image_urls.length > 0 ? formatImageUrl(camp.image_urls[0]) : logoImg} 
-                          alt={camp.title} 
+                        <img
+                          src={camp.image_urls && camp.image_urls.length > 0 ? formatImageUrl(camp.image_urls[0]) : logoImg}
+                          alt={camp.title}
                         />
                       </div>
                       <div className="lookbook-slide-content">
@@ -1075,7 +1087,7 @@ _Thank you for choosing sartorial excellence._`;
                         {camp.copy_text && (
                           <p className="lookbook-slide-copy">{camp.copy_text}</p>
                         )}
-                        
+
                         {camp.team_slug === 'likekodji' && (
                           <div style={{ marginTop: 'auto' }}>
                             <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
@@ -1083,8 +1095,8 @@ _Thank you for choosing sartorial excellence._`;
                             </span>
                             <div className="featured-items-list">
                               {catalog.map(prod => (
-                                <span 
-                                  key={prod.id} 
+                                <span
+                                  key={prod.id}
                                   className="featured-item-tag"
                                   onClick={() => openPersonalization(prod)}
                                 >
@@ -1120,28 +1132,21 @@ _Thank you for choosing sartorial excellence._`;
               borderBottom: '1px solid var(--border-grey)',
               paddingBottom: '16px'
             }}>
-              <button 
-                className={`admin-tab ${activeCategory === 'all' ? 'active' : ''}`}
-                style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
-                onClick={() => filterCollection('all')}
-              >
-                All Outfits
-              </button>
-              <button 
+              <button
                 className={`admin-tab ${activeCategory === 'agbada' ? 'active' : ''}`}
                 style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
                 onClick={() => filterCollection('agbada')}
               >
                 The Grand Agbadas ⚜
               </button>
-              <button 
+              <button
                 className={`admin-tab ${activeCategory === 'senator' ? 'active' : ''}`}
                 style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
                 onClick={() => filterCollection('senator')}
               >
                 The Senators 👔
               </button>
-              <button 
+              <button
                 className={`admin-tab ${activeCategory === 'sartorial' ? 'active' : ''}`}
                 style={{ width: 'auto', padding: '10px 20px', fontSize: '0.75rem' }}
                 onClick={() => filterCollection('sartorial')}
@@ -1159,9 +1164,9 @@ _Thank you for choosing sartorial excellence._`;
                 {filteredCatalog.map(prod => (
                   <div key={prod.id} className="product-card" id={`spotlight-${prod.id}`}>
                     <div className="product-image-container">
-                      <img 
-                        src={prod.image_urls && prod.image_urls.length > 0 ? formatImageUrl(prod.image_urls[0]) : logoImg} 
-                        alt={prod.name} 
+                      <img
+                        src={prod.image_urls && prod.image_urls.length > 0 ? formatImageUrl(prod.image_urls[0]) : logoImg}
+                        alt={prod.name}
                         className="product-image"
                       />
                       <span className="product-badge" style={{ textTransform: 'uppercase', fontSize: '0.55rem' }}>
@@ -1178,7 +1183,7 @@ _Thank you for choosing sartorial excellence._`;
                         <span className="product-price" style={{ fontSize: '1.15rem' }}>
                           GHS {(prod.price_minor / 100).toFixed(2)}
                         </span>
-                        <button 
+                        <button
                           className="btn-gold"
                           disabled={!prod.in_stock}
                           onClick={() => openPersonalization(prod)}
@@ -1192,568 +1197,720 @@ _Thank you for choosing sartorial excellence._`;
               </div>
             )}
           </section>
+        </main>
+      )}
 
-          {/* Sizing & Tailoring Personalization Modal (Store view version) */}
-          {selectedProduct && (
-            <div className="modal-overlay active" id="tailor-modal-overlay">
-              <div className="modal-content" style={{ maxWidth: isFittingRoomActive ? '900px' : '850px' }}>
-                <button className="modal-close" onClick={closePersonalization}>✕</button>
-                
-                <div className="modal-grid" style={{ gridTemplateColumns: isFittingRoomActive ? '1fr 1.2fr' : '1.1fr 1.3fr' }}>
-                  <div className="modal-image-panel" style={{ display: isFittingRoomActive ? 'none' : 'block' }}>
-                    <img 
-                      src={selectedProduct.image_urls && selectedProduct.image_urls.length > 0 ? formatImageUrl(selectedProduct.image_urls[0]) : logoImg} 
-                      alt={selectedProduct.name} 
-                    />
+      {/* Sizing Preview Details Overlay (Landing View version - Lifted to Root Sibling) */}
+      {view === 'landing' && selectedProduct && (
+        <div className="modal-overlay active">
+          <div className="modal-content" style={{ maxWidth: '800px' }}>
+            <button className="modal-close" onClick={closePersonalization}>✕</button>
+            <div className="modal-grid">
+              <div className="modal-image-panel">
+                <img
+                  src={selectedProduct.image_urls && selectedProduct.image_urls.length > 0 ? formatImageUrl(selectedProduct.image_urls[0]) : logoImg}
+                  alt={selectedProduct.name}
+                />
+              </div>
+              <div className="modal-details-panel" style={{ justifyContent: 'center' }}>
+                <span style={{ color: 'var(--color-gold)', letterSpacing: '0.1em', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  Atelier Close-Up
+                </span>
+                <h2 style={{ fontSize: '2rem', marginTop: '4px', marginBottom: '16px' }}>{selectedProduct.name}</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '20px' }}>
+                  {selectedProduct.description || 'Constructed with double chest lining, a rigid premium shoulder build, and lightweight breathable West African weave.'}
+                </p>
+                <div style={{
+                  padding: '16px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--border-grey)',
+                  borderRadius: '2px',
+                  marginBottom: '24px'
+                }}>
+                  <strong style={{ color: 'var(--color-gold)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    📐 Bespoke Sizing Profile
+                  </strong>
+                  <span style={{ fontSize: '0.85rem' }}>
+                    To calculate your exact size coordinates, configure initials monograms, and submit WhatsApp order checkouts, please enter our **Shopping Mall**.
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <button
+                    className="btn-gold-solid"
+                    style={{ flexGrow: 1 }}
+                    onClick={() => {
+                      closePersonalization();
+                      switchAppView('store');
+                    }}
+                  >
+                    Enter Shopping Mall ⚜
+                  </button>
+                  <button
+                    className="btn-gold"
+                    onClick={closePersonalization}
+                  >
+                    Close Showcase
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sizing & Tailoring Personalization Modal (Store view version - Lifted to Root Sibling) */}
+      {view === 'store' && selectedProduct && (
+        <div className="modal-overlay active" id="tailor-modal-overlay">
+          <div className="modal-content" style={{ maxWidth: isFittingRoomActive ? '900px' : '850px' }}>
+            <button className="modal-close" onClick={closePersonalization}>✕</button>
+
+            <div className="modal-grid" style={{ gridTemplateColumns: isFittingRoomActive ? '1fr 1.2fr' : '1.1fr 1.3fr' }}>
+              <div className="modal-image-panel" style={{ display: isFittingRoomActive ? 'none' : 'block' }}>
+                <img
+                  src={selectedProduct.image_urls && selectedProduct.image_urls.length > 0 ? formatImageUrl(selectedProduct.image_urls[0]) : logoImg}
+                  alt={selectedProduct.name}
+                />
+              </div>
+
+              {/* Chatbot Fitting Room Panel */}
+              {isFittingRoomActive && (
+                <div style={{ padding: '32px', borderRight: '1px solid var(--border-grey)', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-serif)' }}>🤖 Virtual Fitting Chat</h3>
+                    <button
+                      style={{ background: 'transparent', border: 'none', color: 'var(--color-gold)', cursor: 'pointer', fontSize: '0.75rem' }}
+                      onClick={() => setIsFittingRoomActive(false)}
+                    >
+                      ✕ Exit Chat
+                    </button>
                   </div>
 
-                  {/* Chatbot Fitting Room Panel */}
-                  {isFittingRoomActive && (
-                    <div style={{ padding: '32px', borderRight: '1px solid var(--border-grey)', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-serif)' }}>🤖 Virtual Fitting Chat</h3>
-                        <button 
-                          style={{ background: 'transparent', border: 'none', color: 'var(--color-gold)', cursor: 'pointer', fontSize: '0.75rem' }}
-                          onClick={() => setIsFittingRoomActive(false)}
+                  <div className="fitting-bot-panel">
+                    <div className="fitting-bot-messages" ref={chatScrollRef}>
+                      {chatMessages.map(msg => (
+                        <div
+                          key={msg.id}
+                          id={`msg-${msg.id}`}
+                          className={`msg-bubble ${msg.sender}`}
                         >
-                          ✕ Exit Chat
-                        </button>
-                      </div>
-
-                      <div className="fitting-bot-panel">
-                        <div className="fitting-bot-messages" ref={chatScrollRef}>
-                          {chatMessages.map(msg => (
-                            <div 
-                              key={msg.id} 
-                              id={`msg-${msg.id}`} 
-                              className={`msg-bubble ${msg.sender}`}
-                            >
-                              {msg.text}
-                            </div>
-                          ))}
+                          {msg.text}
                         </div>
-
-                        <div style={{ padding: '0 12px', background: '#111' }}>
-                          {tempMetrics.chest && <span className="fitting-metric-badge">Chest: {tempMetrics.chest}cm</span>}
-                          {tempMetrics.waist && <span className="fitting-metric-badge">Waist: {tempMetrics.waist}cm</span>}
-                          {tempMetrics.hips && <span className="fitting-metric-badge">Hips: {tempMetrics.hips}cm</span>}
-                        </div>
-
-                        <form className="fitting-bot-input-area" onSubmit={handleSendChatMessage}>
-                          <input 
-                            type="text" 
-                            className="form-control" 
-                            style={{ flexGrow: 1, border: 'none', background: 'transparent' }}
-                            placeholder={chatStep < 4 ? "Type size in cm and press Enter..." : "Calculating..."}
-                            disabled={chatStep >= 4}
-                            value={inputVal}
-                            onChange={(e) => setInputVal(e.target.value)}
-                          />
-                          <button 
-                            type="submit" 
-                            className="btn-gold" 
-                            style={{ padding: '6px 14px', fontSize: '0.75rem' }}
-                            disabled={chatStep >= 4}
-                          >
-                            Send
-                          </button>
-                        </form>
-                      </div>
-
-                      {chatbotSizeLabel && (
-                        <button 
-                          className="btn-gold-solid" 
-                          style={{ marginTop: '16px', width: '100%' }}
-                          onClick={applyFittingToNote}
-                        >
-                          ✦ Apply Sizing coordinates
-                        </button>
-                      )}
+                      ))}
                     </div>
-                  )}
 
-                  {/* Personalization Options */}
-                  <div className="modal-details-panel">
-                    <span style={{ color: 'var(--color-gold)', letterSpacing: '0.1em', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                      Bespoke Customization
-                    </span>
-                    <h2 style={{ fontSize: '1.8rem', margin: '4px 0 12px' }}>{selectedProduct.name}</h2>
-                    
-                    {!isFittingRoomActive && (
-                      <>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                          To guarantee structural excellence, integrate our **AI Virtual Fitting Room** to chat with our digital tailor, calculate size coordinates, and lock chest, waist, and hips metrics.
-                        </p>
+                    <div style={{ padding: '0 12px', background: '#111' }}>
+                      {tempMetrics.chest && <span className="fitting-metric-badge">Chest: {tempMetrics.chest}cm</span>}
+                      {tempMetrics.waist && <span className="fitting-metric-badge">Waist: {tempMetrics.waist}cm</span>}
+                      {tempMetrics.hips && <span className="fitting-metric-badge">Hips: {tempMetrics.hips}cm</span>}
+                    </div>
 
-                        <button 
-                          className="btn-gold-solid" 
-                          style={{ marginBottom: '24px', width: '100%', background: 'transparent', color: 'var(--color-gold)' }}
-                          onClick={initFittingChat}
-                        >
-                          🤖 Launch AI Virtual Fitting Room
-                        </button>
-                      </>
-                    )}
-
-                    {/* Manual bespoke entries */}
-                    <div className="form-group">
-                      <label htmlFor="input-initials">Gold Thread Initials Monogram (Optional)</label>
-                      <input 
-                        type="text" 
-                        id="input-initials"
-                        className="form-control" 
-                        placeholder="e.g. JM" 
-                        maxLength={3}
-                        value={customInitials}
-                        onChange={(e) => setCustomInitials(e.target.value)}
+                    <form className="fitting-bot-input-area" onSubmit={handleSendChatMessage}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        style={{ flexGrow: 1, border: 'none', background: 'transparent' }}
+                        placeholder={chatStep < 4 ? "Type size in cm and press Enter..." : "Calculating..."}
+                        disabled={chatStep >= 4}
+                        value={inputVal}
+                        onChange={(e) => setInputVal(e.target.value)}
                       />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="input-tailor-note">Measurement Adjustments or Request Notes</label>
-                      <textarea 
-                        id="input-tailor-note"
-                        className="form-control" 
-                        rows={3} 
-                        placeholder="e.g. Sleeve length 64cm, collar 41cm..."
-                        value={tailoringNote}
-                        onChange={(e) => setTailoringNote(e.target.value)}
-                      />
-                    </div>
-
-                    {/* Quantity and Submit */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--border-grey)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button 
-                          className="btn-gold" 
-                          style={{ padding: '4px 12px', minWidth: '32px' }}
-                          onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                        >
-                          -
-                        </button>
-                        <span style={{ fontSize: '1.1rem', fontWeight: '600', width: '20px', textAlign: 'center' }}>{quantity}</span>
-                        <button 
-                          className="btn-gold" 
-                          style={{ padding: '4px 12px', minWidth: '32px' }}
-                          onClick={() => setQuantity(prev => prev + 1)}
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      <button 
-                        className="btn-gold-solid" 
-                        style={{ flexGrow: 1 }}
-                        onClick={handleAddToCart}
+                      <button
+                        type="submit"
+                        className="btn-gold"
+                        style={{ padding: '6px 14px', fontSize: '0.75rem' }}
+                        disabled={chatStep >= 4}
                       >
-                        Commit to Basket • GHS {((selectedProduct.price_minor * quantity) / 100).toFixed(2)}
+                        Send
                       </button>
-                    </div>
-
+                    </form>
                   </div>
+
+                  {chatbotSizeLabel && (
+                    <button
+                      className="btn-gold-solid"
+                      style={{ marginTop: '16px', width: '100%' }}
+                      onClick={applyFittingToNote}
+                    >
+                      ✦ Apply Sizing coordinates
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Personalization Options */}
+              <div className="modal-details-panel">
+                <span style={{ color: 'var(--color-gold)', letterSpacing: '0.1em', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  Bespoke Customization
+                </span>
+                <h2 style={{ fontSize: '1.8rem', margin: '4px 0 12px' }}>{selectedProduct.name}</h2>
+
+                {!isFittingRoomActive && (
+                  <>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                      To guarantee structural excellence, integrate our **AI Virtual Fitting Room** to chat with our digital tailor, calculate size coordinates, and lock chest, waist, and hips metrics.
+                    </p>
+
+                    <button
+                      className="btn-gold-solid"
+                      style={{ marginBottom: '24px', width: '100%', background: 'transparent', color: 'var(--color-gold)' }}
+                      onClick={initFittingChat}
+                    >
+                      🤖 Launch AI Virtual Fitting Room
+                    </button>
+                  </>
+                )}
+
+                {/* Manual bespoke entries */}
+                <div className="form-group">
+                  <label htmlFor="input-initials">Gold Thread Initials Monogram (Optional)</label>
+                  <input
+                    type="text"
+                    id="input-initials"
+                    className="form-control"
+                    placeholder="e.g. JM"
+                    maxLength={3}
+                    value={customInitials}
+                    onChange={(e) => setCustomInitials(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="input-tailor-note">Measurement Adjustments or Request Notes</label>
+                  <textarea
+                    id="input-tailor-note"
+                    className="form-control"
+                    rows={3}
+                    placeholder="e.g. Sleeve length 64cm, collar 41cm..."
+                    value={tailoringNote}
+                    onChange={(e) => setTailoringNote(e.target.value)}
+                  />
+                </div>
+
+                {/* Quantity and Submit */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--border-grey)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      className="btn-gold"
+                      style={{ padding: '4px 12px', minWidth: '32px' }}
+                      onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                    >
+                      -
+                    </button>
+                    <span style={{ fontSize: '1.1rem', fontWeight: '600', width: '20px', textAlign: 'center' }}>{quantity}</span>
+                    <button
+                      className="btn-gold"
+                      style={{ padding: '4px 12px', minWidth: '32px' }}
+                      onClick={() => setQuantity(prev => prev + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <button
+                    className="btn-gold-solid"
+                    style={{ flexGrow: 1 }}
+                    onClick={handleAddToCart}
+                  >
+                    Commit to Basket • GHS {((selectedProduct.price_minor * quantity) / 100).toFixed(2)}
+                  </button>
                 </div>
 
               </div>
             </div>
-          )}
 
-          {/* Slide-out Cart Drawer */}
-          <div className={`cart-drawer ${isCartOpen ? 'active' : ''}`} id="shopping-cart-drawer">
-            <div className="cart-header">
-              <h3 style={{ fontSize: '1.35rem' }}>Your Sartorial Basket</h3>
-              <button className="modal-close" style={{ position: 'static' }} onClick={() => setIsCartOpen(false)}>✕</button>
-            </div>
+          </div>
+        </div>
+      )}
 
-            <div className="cart-items-container">
-              {cart.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)' }}>
-                  <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>🛍</span>
-                  <p>Your luxury basket is currently empty.</p>
-                </div>
-              ) : (
-                cart.map(item => (
-                  <div key={item.uniqueCartId} className="cart-item" id={`cart-item-${item.id}`}>
-                    <div className="cart-item-image">
-                      <img src={item.image_urls && item.image_urls.length > 0 ? formatImageUrl(item.image_urls[0]) : logoImg} alt={item.name} />
+      {/* Slide-out Cart Drawer - Lifted to Root Sibling */}
+      {view === 'store' && (
+        <div className={`cart-drawer ${isCartOpen ? 'active' : ''}`} id="shopping-cart-drawer">
+          <div className="cart-header">
+            <h3 style={{ fontSize: '1.35rem' }}>Your Sartorial Basket</h3>
+            <button className="modal-close" style={{ position: 'static' }} onClick={() => setIsCartOpen(false)}>✕</button>
+          </div>
+
+          <div className="cart-items-container">
+            {cart.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>🛍</span>
+                <p>Your luxury basket is currently empty.</p>
+              </div>
+            ) : (
+              cart.map(item => (
+                <div key={item.uniqueCartId} className="cart-item" id={`cart-item-${item.id}`}>
+                  <div className="cart-item-image">
+                    <img src={item.image_urls && item.image_urls.length > 0 ? formatImageUrl(item.image_urls[0]) : logoImg} alt={item.name} />
+                  </div>
+                  <div className="cart-item-info">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <h4 className="cart-item-name">{item.name}</h4>
+                      <button
+                        style={{ background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '0.8rem' }}
+                        onClick={() => removeFromCart(item.uniqueCartId)}
+                      >
+                        Remove
+                      </button>
                     </div>
-                    <div className="cart-item-info">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <h4 className="cart-item-name">{item.name}</h4>
-                        <button 
-                          style={{ background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '0.8rem' }}
-                          onClick={() => removeFromCart(item.uniqueCartId)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                      <span className="cart-item-price">GHS {(item.price_minor / 100).toFixed(2)}</span>
-                      
-                      {item.note && (
-                        <span className="cart-item-note">{item.note}</span>
-                      )}
-                      
-                      <div className="cart-item-qty">
-                        <button onClick={() => updateCartQty(item.uniqueCartId, -1)}>-</button>
-                        <span style={{ fontSize: '0.85rem' }}>{item.qty}</span>
-                        <button onClick={() => updateCartQty(item.uniqueCartId, 1)}>+</button>
-                      </div>
+                    <span className="cart-item-price">GHS {(item.price_minor / 100).toFixed(2)}</span>
+
+                    {item.note && (
+                      <span className="cart-item-note">{item.note}</span>
+                    )}
+
+                    <div className="cart-item-qty">
+                      <button onClick={() => updateCartQty(item.uniqueCartId, -1)}>-</button>
+                      <span style={{ fontSize: '0.85rem' }}>{item.qty}</span>
+                      <button onClick={() => updateCartQty(item.uniqueCartId, 1)}>+</button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-
-            {cart.length > 0 && (
-              <form className="cart-checkout-form" onSubmit={handleCheckout} id="order-checkout-form">
-                <div className="cart-summary">
-                  <span>Grand Total</span>
-                  <strong style={{ color: 'var(--color-gold)', fontFamily: 'var(--font-serif)', fontSize: '1.25rem' }}>
-                    GHS {(getBasketTotalMinor() / 100).toFixed(2)}
-                  </strong>
                 </div>
-
-                <div className="form-group">
-                  <label htmlFor="customer-name-input">Your Full Name *</label>
-                  <input 
-                    type="text" 
-                    id="customer-name-input"
-                    className="form-control" 
-                    required 
-                    placeholder="e.g. John Doe"
-                    value={checkoutName}
-                    onChange={(e) => setCheckoutName(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="customer-phone-input">Contact Phone *</label>
-                  <input 
-                    type="tel" 
-                    id="customer-phone-input"
-                    className="form-control" 
-                    required 
-                    placeholder="e.g. 0593800950"
-                    value={checkoutPhone}
-                    onChange={(e) => setCheckoutPhone(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="customer-note-input">Delivery Address or Shipping Notes</label>
-                  <textarea 
-                    id="customer-note-input"
-                    className="form-control" 
-                    rows={2} 
-                    placeholder="e.g. Airport Residential shipping..."
-                    value={checkoutNote}
-                    onChange={(e) => setCheckoutNote(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group" style={{ marginTop: '16px' }}>
-                  <label htmlFor="merchant-phone-input">Merchant WhatsApp Route (Testing)</label>
-                  <input 
-                    type="text" 
-                    id="merchant-phone-input"
-                    className="form-control" 
-                    style={{ borderColor: 'rgba(212,175,55,0.4)', background: 'transparent' }}
-                    value={whatsappMerchantNumber}
-                    onChange={(e) => setWhatsappMerchantNumber(e.target.value)}
-                    placeholder="e.g. 233593800950"
-                  />
-                </div>
-
-                <button 
-                  type="submit" 
-                  className="btn-gold-solid" 
-                  style={{ width: '100%', marginTop: '12px' }}
-                  id="btn-submit-order"
-                >
-                  ⚜ Checkout via WhatsApp ⚜
-                </button>
-              </form>
+              ))
             )}
           </div>
 
-          {/* Merchant Admin Dashboard Drawer */}
-          <div className={`admin-drawer ${isAdminOpen ? 'active' : ''}`} id="admin-analytics-drawer">
-            <div className="admin-header">
-              <h3 style={{ fontSize: '1.35rem' }}>⚜ Merchant Portal (likekodji)</h3>
-              <button className="modal-close" style={{ position: 'static' }} onClick={() => setIsAdminOpen(false)}>✕</button>
-            </div>
+          {cart.length > 0 && (
+            <form className="cart-checkout-form" onSubmit={handleCheckout} id="order-checkout-form">
+              <div className="cart-summary">
+                <span>Grand Total</span>
+                <strong style={{ color: 'var(--color-gold)', fontFamily: 'var(--font-serif)', fontSize: '1.25rem' }}>
+                  GHS {(getBasketTotalMinor() / 100).toFixed(2)}
+                </strong>
+              </div>
 
-            {/* Tab Controls */}
-            <div className="admin-tabs">
-              <button 
-                className={`admin-tab ${adminActiveTab === 'analytics' ? 'active' : ''}`}
-                onClick={() => setAdminActiveTab('analytics')}
+              <div className="form-group">
+                <label htmlFor="customer-name-input">Your Full Name *</label>
+                <input
+                  type="text"
+                  id="customer-name-input"
+                  className="form-control"
+                  required
+                  placeholder="e.g. John Doe"
+                  value={checkoutName}
+                  onChange={(e) => setCheckoutName(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="customer-phone-input">Contact Phone *</label>
+                <input
+                  type="tel"
+                  id="customer-phone-input"
+                  className="form-control"
+                  required
+                  placeholder="e.g. 0593800950"
+                  value={checkoutPhone}
+                  onChange={(e) => setCheckoutPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="customer-note-input">Delivery Address or Shipping Notes</label>
+                <textarea
+                  id="customer-note-input"
+                  className="form-control"
+                  rows={2}
+                  placeholder="e.g. Airport Residential shipping..."
+                  value={checkoutNote}
+                  onChange={(e) => setCheckoutNote(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label htmlFor="merchant-phone-input">Merchant WhatsApp Route (Testing)</label>
+                <input
+                  type="text"
+                  id="merchant-phone-input"
+                  className="form-control"
+                  style={{ borderColor: 'rgba(212,175,55,0.4)', background: 'transparent' }}
+                  value={whatsappMerchantNumber}
+                  onChange={(e) => setWhatsappMerchantNumber(e.target.value)}
+                  placeholder="e.g. 233593800950"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn-gold-solid"
+                style={{ width: '100%', marginTop: '12px' }}
+                id="btn-submit-order"
               >
-                📊 Analytics
+                ⚜ Checkout via WhatsApp ⚜
               </button>
-              <button 
-                className={`admin-tab ${adminActiveTab === 'logistics' ? 'active' : ''}`}
-                onClick={() => setAdminActiveTab('logistics')}
-              >
-                🚚 Logistics Engine
-              </button>
-              <button 
-                className={`admin-tab ${adminActiveTab === 'campaigns' ? 'active' : ''}`}
-                onClick={() => setAdminActiveTab('campaigns')}
-              >
-                📢 Campaigns
-              </button>
-            </div>
+            </form>
+          )}
+        </div>
+      )}
 
-            <div className="admin-content">
-              
-              {/* TAB 1: Live analytics */}
-              {adminActiveTab === 'analytics' && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h4 style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--color-gold)', letterSpacing: '0.1em' }}>
-                      Live Business Tracker
-                    </h4>
-                    <button 
-                      onClick={() => setRefreshAnalytics(prev => prev + 1)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--color-brass)', cursor: 'pointer', fontSize: '0.75rem' }}
-                    >
-                      🔄 Refresh Stats
-                    </button>
-                  </div>
+      {/* Merchant Admin Dashboard Drawer - Lifted to Root Sibling */}
+      {view === 'store' && (
+        <div className={`admin-drawer ${isAdminOpen ? 'active' : ''}`} id="admin-analytics-drawer">
+          <div className="admin-header">
+            <h3 style={{ fontSize: '1.35rem' }}>⚜ Merchant Portal (likekodji)</h3>
+            <button className="modal-close" style={{ position: 'static' }} onClick={() => setIsAdminOpen(false)}>✕</button>
+          </div>
 
-                  {teamAnalytics ? (
-                    <>
-                      <div className="analytics-grid">
-                        <div className="analytics-card">
-                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Orders Created</span>
-                          <div className="analytics-value">{teamAnalytics.baskets ? teamAnalytics.baskets.length : 0}</div>
-                        </div>
-                        <div className="analytics-card">
-                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Drop Campaigns</span>
-                          <div className="analytics-value">{teamAnalytics.campaigns ? teamAnalytics.campaigns.length : 0}</div>
-                        </div>
-                      </div>
+          {/* Tab Controls */}
+          <div className="admin-tabs">
+            <button
+              className={`admin-tab ${adminActiveTab === 'analytics' ? 'active' : ''}`}
+              onClick={() => setAdminActiveTab('analytics')}
+            >
+              📊 Analytics
+            </button>
+            <button
+              className={`admin-tab ${adminActiveTab === 'logistics' ? 'active' : ''}`}
+              onClick={() => setAdminActiveTab('logistics')}
+            >
+              🚚 Logistics Engine
+            </button>
+            <button
+              className={`admin-tab ${adminActiveTab === 'campaigns' ? 'active' : ''}`}
+              onClick={() => setAdminActiveTab('campaigns')}
+            >
+              📢 Campaigns
+            </button>
+          </div>
 
-                      <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '12px' }}>
-                        Baskets Registry
-                      </h4>
-                      
-                      <div className="orders-list">
-                        {teamAnalytics.baskets && teamAnalytics.baskets.length === 0 ? (
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
-                            No orders have been submitted under team slug 'likekodji' yet.
-                          </p>
-                        ) : (
-                          teamAnalytics.baskets && teamAnalytics.baskets.map(ord => (
-                            <div key={ord.id} className="order-row">
-                              <div>
-                                <strong style={{ color: 'var(--color-gold)' }}>Ref: {ord.id}</strong>
-                                <span style={{ fontSize: '0.7rem', display: 'block', color: 'var(--text-secondary)' }}>
-                                  {new Date(ord.created_at * 1000).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <strong style={{ fontSize: '0.9rem' }}>
-                                Bespoke Order
-                              </strong>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-                      Loading team dashboard analytics...
-                    </div>
-                  )}
-                </div>
-              )}
+          <div className="admin-content">
 
-              {/* TAB 2: GSAP-Animated Spatial Courier Logistics Matcher */}
-              {adminActiveTab === 'logistics' && (
-                <div>
-                  <div style={{ marginBottom: '16px' }}>
-                    <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--color-gold)', letterSpacing: '0.1em' }}>
-                      Last-Mile Delivery Dispatch Center
-                    </h4>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      Matches pending orders with the closest available courier in Accra using spatial coordinates (Haversine formula).
-                    </p>
-                  </div>
-
-                  {/* Exquisite gold-lined vector map */}
-                  <div className="logistics-map-container" id="logistics-accra-map">
-                    <div className="map-grid-bg"></div>
-                    
-                    {/* Boutique central position */}
-                    <div className="map-boutique-pin" style={{ left: `${BOUTIQUE_X}%`, top: `${BOUTIQUE_Y}%` }}></div>
-
-                    {/* Available Couriers positions */}
-                    {couriers.map(rider => (
-                      <div 
-                        key={rider.id}
-                        id={`courier-${rider.id}`} 
-                        className="map-courier-rider" 
-                        style={{ left: `${rider.startX}%`, top: `${rider.startY}%` }}
-                        data-name={rider.name.split(' ')[0]}
-                      ></div>
-                    ))}
-
-                    {/* Neighbor hotpoint pins */}
-                    {ACCRA_NEIGHBORHOODS.map(nh => (
-                      <React.Fragment key={nh.name}>
-                        <div 
-                          className={`map-destination-pin ${selectedDelivery && dispatchLocationName === nh.name ? 'active' : ''}`}
-                          style={{ left: `${nh.x}%`, top: `${nh.y}%` }}
-                        ></div>
-                        <span 
-                          className="map-destination-label"
-                          style={{ left: `${nh.x}%`, top: `${nh.y}%` }}
-                        >
-                          {nh.name}
-                        </span>
-                      </React.Fragment>
-                    ))}
-                  </div>
-
-                  {/* Status info bar */}
-                  {selectedDelivery && (
-                    <div className="dispatch-stats-row">
-                      <div>
-                        <strong>Route details to:</strong> {dispatchLocationName} <br />
-                        <strong>Optimal Distance:</strong> {dispatchDistance.toFixed(2)} km
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <strong>Ref:</strong> {selectedDelivery.id}
-                      </div>
-                    </div>
-                  )}
-
-                  {dispatchStatusMsg && (
-                    <div style={{
-                      marginTop: '12px',
-                      padding: '10px 14px',
-                      background: 'rgba(0, 170, 255, 0.05)',
-                      borderLeft: '2px solid #00aaff',
-                      fontSize: '0.8rem',
-                      color: '#00aaff'
-                    }}>
-                      ✦ {dispatchStatusMsg}
-                    </div>
-                  )}
-
-                  {/* Pending delivery matching table */}
-                  <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: '24px', marginBottom: '12px' }}>
-                    Pending Delivery Queues
+            {/* TAB 1: Live analytics */}
+            {adminActiveTab === 'analytics' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h4 style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--color-gold)', letterSpacing: '0.1em' }}>
+                    Live Business Tracker
                   </h4>
+                  <button
+                    onClick={() => setRefreshAnalytics(prev => prev + 1)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--color-brass)', cursor: 'pointer', fontSize: '0.75rem' }}
+                  >
+                    🔄 Refresh Stats
+                  </button>
+                </div>
 
-                  <div className="orders-list">
-                    {!teamAnalytics || !teamAnalytics.baskets || teamAnalytics.baskets.length === 0 ? (
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
-                        No orders have been submitted under team slug 'likekodji' to match.
-                      </p>
-                    ) : (
-                      teamAnalytics.baskets.map(ord => (
-                        <div key={ord.id} className="order-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {teamAnalytics ? (
+                  <>
+                    <div className="analytics-grid">
+                      <div className="analytics-card">
+                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Orders Created</span>
+                        <div className="analytics-value">{teamAnalytics.baskets ? teamAnalytics.baskets.length : 0}</div>
+                      </div>
+                      <div className="analytics-card">
+                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Drop Campaigns</span>
+                        <div className="analytics-value">{teamAnalytics.campaigns ? teamAnalytics.campaigns.length : 0}</div>
+                      </div>
+                    </div>
+
+                    <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '12px' }}>
+                      Baskets Registry
+                    </h4>
+
+                    <div className="orders-list">
+                      {teamAnalytics.baskets && teamAnalytics.baskets.length === 0 ? (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
+                          No orders have been submitted under team slug 'likekodji' yet.
+                        </p>
+                      ) : (
+                        teamAnalytics.baskets && teamAnalytics.baskets.map(ord => (
+                          <div key={ord.id} className="order-row">
                             <div>
                               <strong style={{ color: 'var(--color-gold)' }}>Ref: {ord.id}</strong>
                               <span style={{ fontSize: '0.7rem', display: 'block', color: 'var(--text-secondary)' }}>
-                                Accra Delivery Required
+                                {new Date(ord.created_at * 1000).toLocaleDateString()}
                               </span>
                             </div>
                             <strong style={{ fontSize: '0.9rem' }}>
                               Bespoke Order
                             </strong>
                           </div>
-
-                          <button 
-                            className="btn-gold" 
-                            style={{ padding: '6px 14px', fontSize: '0.75rem', width: '100%' }}
-                            disabled={isDispatching}
-                            onClick={() => handleAutoDispatch(ord)}
-                          >
-                            Auto-Dispatch Nearest Courier 🚚
-                          </button>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                    Loading team dashboard analytics...
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: GSAP-Animated Spatial Courier Logistics Matcher */}
+            {adminActiveTab === 'logistics' && (
+              <div>
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--color-gold)', letterSpacing: '0.1em' }}>
+                    Last-Mile Delivery Dispatch Center
+                  </h4>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    Matches pending orders with the closest available courier in Accra using spatial coordinates (Haversine formula).
+                  </p>
                 </div>
-              )}
 
-              {/* TAB 3: Campaigns creator form */}
-              {adminActiveTab === 'campaigns' && (
-                <div className="campaign-form" style={{ marginTop: 0, paddingTop: 0 }}>
-                  <h3 style={{ fontSize: '1.25rem', marginBottom: '16px' }}>Publish a Lookbook Drop</h3>
-                  
-                  <form onSubmit={handleCreateCampaign} id="publish-campaign-form">
-                    <div className="form-group">
-                      <label htmlFor="campaign-title-input">Lookbook Title *</label>
-                      <input 
-                        type="text" 
-                        id="campaign-title-input"
-                        className="form-control" 
-                        required 
-                        placeholder="e.g. Midnight Sartorial Drop"
-                        value={campaignTitle}
-                        onChange={(e) => setCampaignTitle(e.target.value)}
-                      />
+                {/* Exquisite gold-lined vector map */}
+                <div className="logistics-map-container" id="logistics-accra-map">
+                  <div className="map-grid-bg"></div>
+
+                  {/* Boutique central position */}
+                  <div className="map-boutique-pin" style={{ left: `${BOUTIQUE_X}%`, top: `${BOUTIQUE_Y}%` }}></div>
+
+                  {/* Available Couriers positions */}
+                  {couriers.map(rider => (
+                    <div
+                      key={rider.id}
+                      id={`courier-${rider.id}`}
+                      className="map-courier-rider"
+                      style={{ left: `${rider.startX}%`, top: `${rider.startY}%` }}
+                      data-name={rider.name.split(' ')[0]}
+                    ></div>
+                  ))}
+
+                  {ACCRA_NEIGHBORHOODS.map(nh => (
+                    <React.Fragment key={nh.name}>
+                      <div
+                        className={`map-destination-pin ${selectedDelivery && dispatchLocationName === nh.name ? 'active' : ''}`}
+                        style={{ left: `${nh.x}%`, top: `${nh.y}%` }}
+                      ></div>
+                      <span
+                        className="map-destination-label"
+                        style={{ left: `${nh.x}%`, top: `${nh.y}%` }}
+                      >
+                        {nh.name}
+                      </span>
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                {/* Status info bar */}
+                {selectedDelivery && (
+                  <div className="dispatch-stats-row">
+                    <div>
+                      <strong>Route details to:</strong> {dispatchLocationName} <br />
+                      <strong>Optimal Distance:</strong> {dispatchDistance.toFixed(2)} km
                     </div>
-
-                    <div className="form-group">
-                      <label htmlFor="campaign-copy-input">Lookbook Description / Copy</label>
-                      <textarea 
-                        id="campaign-copy-input"
-                        className="form-control" 
-                        rows={3} 
-                        placeholder="Introduce the theme and craft behind this collection..."
-                        value={campaignCopy}
-                        onChange={(e) => setCampaignCopy(e.target.value)}
-                      />
+                    <div style={{ textAlign: 'right' }}>
+                      <strong>Ref:</strong> {selectedDelivery.id}
                     </div>
+                  </div>
+                )}
 
-                    <div className="form-group">
-                      <label htmlFor="campaign-file-input">Lookbook Drop Banner Image</label>
-                      <input 
-                        type="file" 
-                        id="campaign-file-input"
-                        className="form-control" 
-                        accept="image/*"
-                        onChange={(e) => setCampaignImageFile(e.target.files[0])}
-                      />
-                    </div>
+                {dispatchStatusMsg && (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '10px 14px',
+                    background: 'rgba(0, 170, 255, 0.05)',
+                    borderLeft: '2px solid #00aaff',
+                    fontSize: '0.8rem',
+                    color: '#00aaff'
+                  }}>
+                    ✦ {dispatchStatusMsg}
+                  </div>
+                )}
 
-                    <div className="form-group">
-                      <label>Feature Outfits in Drop</label>
-                      <div className="multiselect-grid">
-                        {catalog.map(prod => (
-                          <label key={prod.id} className="multiselect-item">
-                            <input 
-                              type="checkbox" 
-                              checked={campaignFeaturedIds.includes(prod.id)}
-                              onChange={() => handleCheckboxChange(prod.id)}
-                            />
-                            <span>{prod.name}</span>
-                          </label>
-                        ))}
+                {/* Pending delivery matching table */}
+                <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: '24px', marginBottom: '12px' }}>
+                  Pending Delivery Queues
+                </h4>
+
+                <div className="orders-list">
+                  {!teamAnalytics || !teamAnalytics.baskets || teamAnalytics.baskets.length === 0 ? (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
+                      No orders have been submitted under team slug 'likekodji' to match.
+                    </p>
+                  ) : (
+                    teamAnalytics.baskets.map(ord => (
+                      <div key={ord.id} className="order-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <strong style={{ color: 'var(--color-gold)' }}>Ref: {ord.id}</strong>
+                            <span style={{ fontSize: '0.7rem', display: 'block', color: 'var(--text-secondary)' }}>
+                              Accra Delivery Required
+                            </span>
+                          </div>
+                          <strong style={{ fontSize: '0.9rem' }}>
+                            Bespoke Order
+                          </strong>
+                        </div>
+
+                        <button
+                          className="btn-gold"
+                          style={{ padding: '6px 14px', fontSize: '0.75rem', width: '100%' }}
+                          disabled={isDispatching}
+                          onClick={() => handleAutoDispatch(ord)}
+                        >
+                          Auto-Dispatch Nearest Courier 🚚
+                        </button>
                       </div>
-                    </div>
-
-                    <button 
-                      type="submit" 
-                      className="btn-gold-solid" 
-                      style={{ width: '100%', marginTop: '16px' }}
-                      id="btn-publish-lookbook"
-                    >
-                      Publish New Collection Drop
-                    </button>
-                  </form>
+                    ))
+                  )}
                 </div>
-              )}
+              </div>
+            )}
 
+            {/* TAB 3: Campaigns creator form */}
+            {adminActiveTab === 'campaigns' && (
+              <div className="campaign-form" style={{ marginTop: 0, paddingTop: 0 }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '16px' }}>Publish a Lookbook Drop</h3>
+
+                <form onSubmit={handleCreateCampaign} id="publish-campaign-form">
+                  <div className="form-group">
+                    <label htmlFor="campaign-title-input">Lookbook Title *</label>
+                    <input
+                      type="text"
+                      id="campaign-title-input"
+                      className="form-control"
+                      required
+                      placeholder="e.g. Midnight Sartorial Drop"
+                      value={campaignTitle}
+                      onChange={(e) => setCampaignTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="campaign-copy-input">Lookbook Description / Copy</label>
+                    <textarea
+                      id="campaign-copy-input"
+                      className="form-control"
+                      rows={3}
+                      placeholder="Introduce the theme and craft behind this collection..."
+                      value={campaignCopy}
+                      onChange={(e) => setCampaignCopy(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="campaign-file-input">Lookbook Drop Banner Image</label>
+                    <input
+                      type="file"
+                      id="campaign-file-input"
+                      className="form-control"
+                      accept="image/*"
+                      onChange={(e) => setCampaignImageFile(e.target.files[0])}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Feature Outfits in Drop</label>
+                    <div className="multiselect-grid">
+                      {catalog.map(prod => (
+                        <label key={prod.id} className="multiselect-item">
+                          <input
+                            type="checkbox"
+                            checked={campaignFeaturedIds.includes(prod.id)}
+                            onChange={() => handleCheckboxChange(prod.id)}
+                          />
+                          <span>{prod.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn-gold-solid"
+                    style={{ width: '100%', marginTop: '16px' }}
+                    id="btn-publish-lookbook"
+                  >
+                    Publish New Collection Drop
+                  </button>
+                </form>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+
+      {/* Bespoke Order Confirmed Receipt Modal (Pop-up safe checkout routing) */}
+      {confirmedBasket && (
+        <div className="modal-overlay active" style={{ zIndex: 300 }}>
+          <div className="modal-content" style={{ maxWidth: '550px', textAlign: 'center', padding: '40px' }}>
+            <button className="modal-close" onClick={() => setConfirmedBasket(null)}>✕</button>
+
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                border: '1px solid var(--color-gold)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                color: 'var(--color-gold)',
+                fontSize: '2rem'
+              }}>
+                ✦
+              </div>
+              <span style={{ color: 'var(--color-gold)', letterSpacing: '0.2em', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: '600' }}>
+                Order Registered
+              </span>
+              <h2 style={{ fontSize: '2.2rem', marginTop: '6px', fontFamily: 'var(--font-serif)' }}>Sartorial Receipt</h2>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid var(--border-grey)',
+              padding: '24px',
+              borderRadius: '2px',
+              textAlign: 'left',
+              marginBottom: '28px',
+              fontSize: '0.9rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Order Reference:</span>
+                <strong style={{ color: 'var(--color-gold)', fontFamily: 'var(--font-sans)' }}>{confirmedBasket.id}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Client Name:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{confirmedBasket.name || 'Valued Client'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px', marginBottom: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Bespoke Value:</span>
+                <strong style={{ color: 'var(--color-gold)', fontSize: '1.1rem' }}>GHS {confirmedBasket.total}</strong>
+              </div>
+
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--border-grey)' }}>
+                <span style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '8px' }}>
+                  Configured Outfits:
+                </span>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {confirmedBasket.items.map((item, idx) => (
+                    <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.8rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>✦ {item.qty}x {item.name}</span>
+                      {item.note && <span style={{ color: 'var(--color-brass)', fontStyle: 'italic', fontSize: '0.75rem' }}>Tailored</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '32px' }}>
+              Your garment measurements and monogram config have been securely bound on our Coded Matrix backend under team **likekodji**. Click below to launch your WhatsApp tailor confirmation chat.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <a
+                href={confirmedBasket.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-gold-solid"
+                style={{ textDecoration: 'none', display: 'block', padding: '14px' }}
+                onClick={() => setConfirmedBasket(null)}
+              >
+                ⚜ Launch WhatsApp Tailor Chat ⚜
+              </a>
+              <button
+                className="btn-gold"
+                onClick={() => setConfirmedBasket(null)}
+              >
+                Close Receipt
+              </button>
             </div>
           </div>
-        </main>
+        </div>
       )}
 
       {/* Shared Brand Footer */}
