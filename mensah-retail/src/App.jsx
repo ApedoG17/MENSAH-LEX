@@ -1091,7 +1091,7 @@ _Thank you for choosing sartorial excellence._`;
                       MENSAH Luxury Atelier
                     </h2>
                     <p style={{ color: 'var(--text-primary)', fontSize: '0.92rem', fontWeight: '500', marginBottom: '8px' }}>
-                      Airport Residential Area, Accra, Ghana
+                      East Legon, behind American House, Accra, Ghana
                     </p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '24px' }}>
                       Please call <strong style={{ color: 'var(--color-gold)' }}>Godwin on 0593800950</strong> if you have questions or need assistance.
@@ -1108,7 +1108,7 @@ _Thank you for choosing sartorial excellence._`;
                     border: '1px solid var(--border-grey)'
                   }}>
                     <a
-                      href="https://www.google.com/maps/place/Airport+Residential+Area,+Accra"
+                      href="https://www.google.com/maps/search/East+Legon,+behind+American+House,+Accra,+Ghana"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-gold"
@@ -1134,7 +1134,7 @@ _Thank you for choosing sartorial excellence._`;
 
                     <iframe
                       title="MENSAH Luxury Atelier location map"
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15882.99026410196!2d-0.1906917637841797!3d5.6037!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfdf9a6b9a89df2b%3A0x6b4904bf524458d9!2sAirport+Residential+Area%2C+Accra!5e0!3m2!1sen!2sgh!4v1716480000000!5m2!1sen!2sgh"
+                      src="https://maps.google.com/maps?q=East+Legon,+Accra,+Ghana&t=&z=15&ie=UTF8&iwloc=&output=embed"
                       width="100%"
                       height="100%"
                       style={{
